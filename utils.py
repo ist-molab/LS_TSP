@@ -8,6 +8,21 @@ import glob
 from urllib.request import urlretrieve
 
 
+def eval_obj(coord, tour):
+    obj_val = 0
+    for i in range(len(tour)):
+        obj_val += calc_dist(coord, tour[i],
+                             tour[(i + 1) % len(tour)])
+    return obj_val
+
+
+def calc_dist(coord, u, v):
+    """
+    とりえあずmetric tspのみ対応
+    """
+    return np.linalg.norm(coord[u] - coord[v])
+
+
 def get_whole_tsplib(save_dir="./data"):
     if os.path.exists(save_dir):
         return
@@ -64,7 +79,7 @@ def load_tsplib(data_name, save_dir="./data"):
 
         if(line == "NODE_COORD_SECTION"):
             coord = np.array(
-                list(map(lambda x: x.split()[1:], data[i + 1:i + 1 + data_dim])), dtype=int)
+                list(map(lambda x: x.split()[1:], data[i + 1:i + 1 + data_dim])), dtype=float)
             break
 
     for i, line in enumerate(opt_data):
@@ -78,7 +93,7 @@ def render(data, tour=None):
     data_dim = len(data)
     fig = plt.figure(figsize=(10, 10))
     plt.scatter(data[:, 0], data[:, 1])
-    if not tour.any() == None:
+    if not tour is None:
         for i in range(data_dim):
             p = data[tour[i] - 1]
             np = data[tour[(i + 1) % data_dim] - 1]
