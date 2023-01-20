@@ -6,6 +6,17 @@ from utils import *
 import time
 
 
+class Random_Solver:
+    def __init__(self, coord, edge_weight=None):
+        self.coord = coord
+        self.num_node = len(coord)
+        self.tour = np.arange(self.num_node)
+        self.obj = eval_obj(self.coord, self.tour)
+
+    def solve(self):
+        return np.array(range(self.num_node))
+
+
 class NN_Solver:
     def __init__(self, coord, edge_weight=None):
         self.coord = coord
@@ -30,10 +41,13 @@ class NN_Solver:
 
 
 class Local_Solver:
-    def __init__(self, coord, time_limit=10, edge_weight=None):
+    def __init__(self, coord, time_limit=30, edge_weight=None, initial='random'):
         self.coord = coord
         self.num_node = len(coord)
-        init_opt = NN_Solver(coord)
+        if initial is None:
+            init_opt = NN_Solver(coord)
+        else:
+            init_opt = Random_Solver(coord)
         self.tour = init_opt.solve()
         self.obj = init_opt.obj
         self.time_limit = time_limit
@@ -85,15 +99,14 @@ class Local_Solver:
             restart = False
             nbhd = [(i, j) for i in range(len(self.tour))
                     for j in range(i + 2, len(self.tour))]
-
             for i, j in nbhd:
                 delta = self.eval_diff_two_opt(i, j)
                 if delta < 0:
                     self.change_tour_two_opt(i, j)
                     restart = True
-                    break
+                    return
 
-    def Or_opt(self, size=3, strategy="first"):
+    def Or_opt(self, size=10, strategy="first"):
         nbhd = [(s, i, j)
                 for s in range(1, size + 1)
                 for i in range(len(self.tour))
@@ -107,32 +120,47 @@ class Local_Solver:
                 if delta < 0:
                     self.change_tour_Or_opt(s, i, j)
                     restart = True
-                    break
+                    return
 
     def solve(self, method="grasp"):
         start_time = cur_time = time.time()
-
+        idx = 0
         while(cur_time - start_time < self.time_limit):
             self.two_opt()
             self.Or_opt()
             print(self.obj)
+            render(coord, self.tour, f'figure/ls_{idx}.png')
+            idx += 1
             cur_time = time.time()
         return self.tour
 
 
 if __name__ == '__main__':
     data_name = "att48"
-    coord, opt_tour = load_tsplib(data_name)
-    # NN solver
-    optimizer = NN_Solver(coord)
-    print(optimizer.obj)
-    sol = optimizer.solve()
-    print(optimizer.obj)
-    render(coord, sol)
+    # coord, opt_tour = load_tsplib(data_name)
+    coord = np.random.randint(0, 100, size=(50, 2))
+    # # NN solver
+    # optimizer = NN_Solver(coord)
+    # print(optimizer.obj)
+    # sol = optimizer.solve()
+    # print(optimizer.obj)
+    # render(coord, sol, 'figure/nn.png')
 
     # Local solver
     optimizer = Local_Solver(coord)
     print(optimizer.obj)
     sol = optimizer.solve()
     print(optimizer.obj)
-    render(coord, sol)
+    render(coord, sol, 'figure/ls.png')
+
+    # 解の更新のGIF
+    from PIL import Image, ImageDraw
+    images = []
+    for i in range(1, 1000):
+        try:
+            images.append(Image.open(f'figure/ls_{i}.png'))
+        except:
+            break
+
+    images[0].save('figure/transition.gif', save_all=True,
+                   append_images=images[1:], optimize=False, duration=130, loop=0)

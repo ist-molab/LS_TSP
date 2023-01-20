@@ -89,16 +89,16 @@ def load_tsplib(data_name, save_dir="./data"):
     return coord, opt_tour
 
 
-def render(data, tour=None):
-    data_dim = len(data)
+def render(coord, tour=None, path='solution.png'):
     fig = plt.figure(figsize=(10, 10))
-    plt.scatter(data[:, 0], data[:, 1])
+    plt.scatter(coord[:, 0], coord[:, 1])
     if not tour is None:
-        for i in range(data_dim):
-            p = data[tour[i] - 1]
-            np = data[tour[(i + 1) % data_dim] - 1]
-            plt.plot([p[0], np[0]], [p[1], np[1]], c='k', linewidth=3)
-    plt.show()
+        tour_coord = np.array([coord[i] for i in tour])
+        tour_coord_ = np.append(tour_coord, [tour_coord[0]], axis=0)
+        plt.plot(tour_coord_[:, 0], tour_coord_[:, 1], lw=2, c='k')
+
+    plt.savefig(path)
+    plt.close()
 
 
 if __name__ == '__main__':
